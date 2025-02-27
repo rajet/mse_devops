@@ -1,0 +1,23 @@
+services:
+  myhttp2:
+    image: httpd:latest
+    ports:
+      - "8080:80"
+    volumes:
+      - data:/usr/local/apache2/htdocs
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+
+  myTimeUpdater:
+    image: test/myimage:latest
+    volumes:
+      - data:/data
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+
+volumes:
+  data:
