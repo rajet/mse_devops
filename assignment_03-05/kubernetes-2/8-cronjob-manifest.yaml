@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: log-counter
+  namespace: k8s-part-2
+spec:
+  schedule: "*/1 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          volumes:
+            - name: shared-data
+              persistentVolumeClaim:
+                claimName: data-pvc
+          containers:
+            - name: log-counter
+              image: debain:latest
+              command:
+              - /bin/bash
+              - -c
+              - |
+                if [ -f /shared/seconds.log ]; then
+                  count=$(wc -l < /shared/seconds.log)
+                  echo "$(date): $count entries counted" >> /shared/count.log
+                else
+                  echo "$(date): seconds.log file not found" >> /shared/count.log
+                fi
+              volumeMounts:
+                - name: shared-data
+                  mountPath: /shared
+          restartPolicy: OnFailure

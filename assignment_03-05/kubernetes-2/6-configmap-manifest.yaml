@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: log-generator-config
+  namespace: k8s-part-2
+data:
+  log-generator.sh: |
+    #!/bin/bash
+    while true; do
+      sleep 1
+      date >> /shared/seconds.log
+    done

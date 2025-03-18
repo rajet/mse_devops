@@ -1,0 +1,23 @@
+1.  #already done
+
+2.  # create a namespace
+    k create namespace k8s-part-2
+    # get all namespace
+    k get namespaces
+
+3.  # create secrets in the namespace
+    k create secret generic mariadb-secret \
+        --from-literal=MARIADB_ROOT_PASSWORD=my-secret-pass \
+        --from-literal=MARIADB_DATABASE=test \
+        --namespace=k8s-part-2
+    # check if exists
+    k get secrets -n k8s-part-2
+
+4   # did in mariadb-manifest.yaml
+    # apply mariadb pod
+    k apply -f kubernetes-2/mariadb-manifest.yam
+    # connect to maria db pod
+    kubectl exec -it maria-db-pod -n k8s-part-2  -- bash
+    # use mariadb connect to check the secret
+    mariadb -u root -p
+    ...
