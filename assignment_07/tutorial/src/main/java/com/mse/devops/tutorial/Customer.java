@@ -1,11 +1,9 @@
 package com.mse.devops.tutorial;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
 @Entity
+@Table(name = "Customer")
 public class Customer {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -13,7 +11,14 @@ public class Customer {
     private String firstName;
     private String lastName;
 
-    protected Customer() {}
+    protected Customer() {
+    }
+
+    protected Customer(Long id, String firstName, String lastName) {
+        this.id = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
+    }
 
     public Customer(String firstName, String lastName) {
         this.firstName = firstName;

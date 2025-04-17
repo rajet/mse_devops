@@ -5,6 +5,9 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 @Service
 public class CustomerService {
@@ -16,8 +19,10 @@ public class CustomerService {
     }
 
     @Transactional(readOnly = true)
-    public Iterable<Customer> findAll() {
-        return customerRepository.findAll();
+    public List<Customer> findAll() {
+        List<Customer> list = new ArrayList<>();
+        customerRepository.findAll().forEach(list::add);
+        return list;
     }
 
     @Transactional(readOnly = true)
@@ -26,13 +31,13 @@ public class CustomerService {
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED)
-    public Customer create(Customer customer){
+    public Customer create(Customer customer) {
         customerRepository.save(customer);
         return customer;
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED)
-    public void deleteById(Long id){
+    public void deleteById(Long id) {
         customerRepository.deleteById(id);
     }
 }
