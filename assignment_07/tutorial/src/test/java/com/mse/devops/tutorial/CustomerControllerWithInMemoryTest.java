@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +20,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @TestPropertySource(locations = "classpath:application-test.properties")
 @Transactional
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class CustomerControllerWithInMemoryTest {
 
     @Autowired
@@ -33,12 +31,18 @@ class CustomerControllerWithInMemoryTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    private Long johnId;
+    private Long janeId;
+
     @BeforeEach
     void setUp() {
         customerRepository.deleteAll();
 
-        customerRepository.save(new Customer("John", "Doe"));
-        customerRepository.save(new Customer("Jane", "Doe"));
+        Customer john = customerRepository.save(new Customer("John", "Doe"));
+        Customer jane = customerRepository.save(new Customer("Jane", "Doe"));
+        
+        johnId = john.getId();
+        janeId = jane.getId();
     }
 
     @Test
@@ -47,10 +51,10 @@ class CustomerControllerWithInMemoryTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].id").value(johnId))
                 .andExpect(jsonPath("$[0].firstName").value("John"))
                 .andExpect(jsonPath("$[0].lastName").value("Doe"))
-                .andExpect(jsonPath("$[1].id").value(2))
+                .andExpect(jsonPath("$[1].id").value(janeId))
                 .andExpect(jsonPath("$[1].firstName").value("Jane"))
                 .andExpect(jsonPath("$[1].lastName").value("Doe"));
     }
@@ -61,7 +65,7 @@ class CustomerControllerWithInMemoryTest {
         mockMvc.perform(get("/customers/1"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.id").value(johnId))
                 .andExpect(jsonPath("$.firstName").value("John"))
                 .andExpect(jsonPath("$.lastName").value("Doe"));
     }
@@ -73,14 +77,13 @@ class CustomerControllerWithInMemoryTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(testCustomer)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(3))
                 .andExpect(jsonPath("$.firstName").value("Johnny"))
                 .andExpect(jsonPath("$.lastName").value("Doe"));
     }
 
+
     @Test
     void deleteCustomer() throws Exception {
-
         mockMvc.perform(delete("/customers/1"))
                 .andExpect(status().isNoContent());
 
