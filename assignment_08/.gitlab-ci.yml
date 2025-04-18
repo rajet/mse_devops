@@ -1,0 +1,87 @@
+stages:
+  - test
+  - build
+  - deploy
+
+.maven_template: &maven_template
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .m2/repository
+  variables:
+    MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+  only:
+    - dev
+
+test-jdk23:
+  stage: test
+  image: maven:3.9-eclipse-temurin-23
+  <<: *maven_template
+  script:
+    - echo "Running tests with JDK 23"
+    - mvn clean test
+  artifacts:
+    when: always
+    reports:
+      junit:
+        - target/surefire-reports/TEST-*.xml
+
+test-jdk24:
+  stage: test
+  image: maven:3.9-eclipse-temurin-24
+  <<: *maven_template
+  script:
+    - echo "Running tests with JDK 24"
+    - mvn clean test
+  artifacts:
+    when: always
+    reports:
+      junit:
+        - target/surefire-reports/TEST-*.xml
+
+build:
+  stage: build
+  image: docker:28
+  services:
+    - docker:28-dind
+  only:
+    - dev
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA .
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA $CI_REGISTRY_IMAGE:latest
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+    - docker push $CI_REGISTRY_IMAGE:latest
+
+deploy-staging:
+  stage: deploy
+  image: google/cloud-sdk:latest
+  only:
+    - dev
+  before_script:
+    - echo "$GCP_SERVICE_ACCOUNT_KEY" > key.json
+    - gcloud auth activate-service-account --key-file key.json
+    - gcloud config set compute/zone us-central1-c
+    - gcloud config set project algebraic-ratio-453108-m1
+    - gcloud container clusters get-credentials cluster-1
+  script:
+    - kubectl apply -f kubernetes/staging/namespace.yaml
+    - kubectl apply -f kubernetes/staging/deployment.yaml
+    - kubectl apply -f kubernetes/staging/service.yaml
+
+deploy-production:
+  stage: deploy
+  image: google/cloud-sdk:latest
+  only:
+    - dev
+  before_script:
+    - echo "$GCP_SERVICE_ACCOUNT_KEY" > key.json
+    - gcloud auth activate-service-account --key-file key.json
+    - gcloud config set compute/zone us-central1-c
+    - gcloud config set project algebraic-ratio-453108-m1
+    - gcloud container clusters get-credentials cluster-1
+  script:
+    - kubectl apply -f kubernetes/production/namespace.yaml
+    - kubectl apply -f kubernetes/production/deployment.yaml
+    - kubectl apply -f kubernetes/production/service.yaml
